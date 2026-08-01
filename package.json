@@ -1,7 +1,7 @@
 {
   "name": "discord-bot-railway",
   "version": "1.0.0",
-  "description": "بوت تحكم عبر ديسكورد",
+  "description": "بوت تحكم عبر ديسكورد مع متغيرات بيئية",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -11,6 +11,6 @@
     "screenshot-desktop": "^1.15.0"
   },
   "engines": {
-    "node": ">=16.9.0"
+    "node": ">=18.0.0"
   }
 }
