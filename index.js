@@ -4,13 +4,17 @@ const bodyParser = require('body-parser');
 const { exec, execSync } = require('child_process');
 const os = require('os');
 
-// ===== إعدادات البوت =====
-const TOKEN = 'ضع_توكنك_هنا'; // ⚠️ استبدل بتوكنك الفعلي
+// ===== قراءة المتغيرات من البيئة =====
+const TOKEN = process.env.BOT_TOKEN;
+if (!TOKEN) {
+    console.error('❌ BOT_TOKEN غير مضبوط في متغيرات البيئة!');
+    process.exit(1);
+}
+
 const PREFIX = '!';
-// المنفذ يُقرأ من بيئة Railway، أو 3000 للتشغيل المحلي
 const PORT = process.env.PORT || 3000;
 
-// ===== خادم Express (الوسيط) =====
+// ===== خادم Express =====
 const app = express();
 app.use(bodyParser.json());
 
@@ -19,7 +23,7 @@ const commandResults = {};
 let cmdCounter = 0;
 const clients = {};
 
-// نقاط API (نفسها بدون تغيير)
+// ===== نقاط API =====
 app.post('/register', (req, res) => {
     const { clientId, hostname } = req.body;
     if (!clientId) return res.status(400).json({ error: 'Missing clientId' });
@@ -79,7 +83,6 @@ client.on('messageCreate', async (msg) => {
     const args = msg.content.slice(PREFIX.length).trim().split(/ +/);
     const cmd = args.shift().toLowerCase();
 
-    // استخدم localhost:PORT لأن البوت والخادم في نفس الحاوية
     const baseUrl = `http://localhost:${PORT}`;
 
     if (cmd === 'list') {
@@ -169,7 +172,7 @@ client.once('ready', () => {
 
 client.login(TOKEN);
 
-// تشغيل الخادم على المنفذ المحدد (من Railway أو المحلي)
+// تشغيل الخادم
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ الخادم الوسيط يعمل على المنفذ ${PORT}`);
     console.log(`🌐 الرابط العام: https://remote-production-b44f.up.railway.app`);
